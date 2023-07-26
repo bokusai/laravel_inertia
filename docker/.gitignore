@@ -1,0 +1,5 @@
+
+.local-docker-version
+
+mysql/state/*
+!mysql/state/empty
