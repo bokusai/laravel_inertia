@@ -1,0 +1,69 @@
+version: "1.0.0"
+services:
+  apache:
+    platform: linux/x86_64
+    image: httpd:2.4.56
+    ports:
+      - ${DEFAULT_LOCAL_PORT}:80
+    volumes:
+      - ../${LOCAL_APP_DIR}:/var/www/${APP_DIR}
+      - ./apache/conf/httpd.conf:/usr/local/apache2/conf/httpd.conf
+    working_dir: /var/www/${APP_DIR}
+    restart: always
+    environment:
+      DODCUMENT_ROOT: /var/www/${APP_DODCUMENT_ROOT}
+    depends_on:
+      - php-fpm
+      - memcached
+
+  php-fpm:
+    platform: linux/x86_64
+    build:
+      context: ./php-fpm
+      dockerfile: Dockerfile
+    volumes:
+      - ../${LOCAL_APP_DIR}:/var/www/${APP_DIR}
+      - ./php-fpm/conf/php-fpm.conf:/usr/local/etc/php-fpm.conf
+      - ./php-fpm/conf/www.conf:/usr/local/etc/php-fpm.d/www.conf
+    working_dir: /var/www/${APP_DIR}
+    restart: always
+
+  nodejs:
+    platform: linux/x86_64
+    image: node:18.17.0
+    ports:
+      - 5173:5173
+    tty: true
+    volumes:
+      - ../${APP_DIR}:/var/www/${APP_DIR}
+    working_dir: /var/www/${APP_DIR}
+      #restart: always
+      #command: bash -c "cd ${NODE_APP_DIR} && npm run ${NODE_RUN_COMMAND}"
+
+  mysql:
+    platform: linux/amd64
+    image: mysql:8.0.28
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      TZ: "Asia/Tokyo"
+    volumes:
+      - ./mysql/conf/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./mysql/initdb:/docker-entrypoint-initdb.d
+    #  - ./mysql/state/db:/var/lib/mysql
+    restart: always
+
+  memcached:
+    platform: linux/x86_64
+    image: memcached:1.6.12
+    restart: always
+  
+  mailhog:
+    platform: linux/amd64
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - ${MAILHOG_LOCAL_PORT}:8025
+    restart: always
+
+
